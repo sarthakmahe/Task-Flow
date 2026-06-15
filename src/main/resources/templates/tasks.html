@@ -321,6 +321,147 @@
             transform: translateY(0);
         }
 
+        /* ── Search form ── */
+        .search-form {
+            display: flex;
+            gap: 0.65rem;
+            margin-bottom: 1.25rem;
+            align-items: center;
+        }
+
+        .search-form .input-wrap {
+            flex: 1;
+        }
+
+        .search-form input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text);
+            background: var(--surface-2);
+            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+        }
+
+        .search-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        .btn-search {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.75rem 1.2rem;
+            background: var(--surface);
+            color: var(--text-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .btn-search:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .btn-clear {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            white-space: nowrap;
+            padding: 0.75rem 0.5rem;
+        }
+
+        .btn-clear:hover {
+            color: var(--primary);
+        }
+
+        /* ── Alerts ── */
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        /* ── Pagination ── */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+
+        .page-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            pointer-events: none;
+        }
+
+        .page-btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .page-info {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
         /* ── Task list ── */
         .task-list-header {
             display: flex;
@@ -571,6 +712,10 @@
             .add-form { flex-direction: column; }
             .btn-add { justify-content: center; }
 
+            .search-form { flex-direction: column; align-items: stretch; }
+            .btn-search { justify-content: center; }
+            .btn-clear { text-align: center; padding: 0.5rem; }
+
             .task-actions { opacity: 1; }
 
             .card-section { padding: 1.15rem; }
@@ -601,23 +746,23 @@
     </div>
 
     <!-- Stats -->
-    <div class="stats" th:with="total=${#lists.size(tasks)}, done=${#lists.size(tasks.?[completed])}, pending=${#lists.size(tasks.?[completed == false])}">
+    <div class="stats">
         <div class="stat-card accent">
             <div class="stat-label">Total</div>
-            <div class="stat-value" th:text="${total}">0</div>
+            <div class="stat-value" th:text="${totalTasks}">0</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Pending</div>
-            <div class="stat-value" th:text="${pending}">0</div>
+            <div class="stat-value" th:text="${pendingTasks}">0</div>
         </div>
         <div class="stat-card success">
             <div class="stat-label">Completed</div>
-            <div class="stat-value" th:text="${done}">0</div>
+            <div class="stat-value" th:text="${completedTasks}">0</div>
         </div>
     </div>
 
     <!-- Progress bar -->
-    <div class="progress-section" th:with="total=${#lists.size(tasks)}, done=${#lists.size(tasks.?[completed])}, pct=${total > 0 ? (done * 100 / total) : 0}">
+    <div class="progress-section" th:with="pct=${totalTasks > 0 ? (completedTasks * 100 / totalTasks) : 0}">
         <div class="progress-header">
             <span>Overall Progress</span>
             <strong th:text="${pct} + '%'">0%</strong>
@@ -633,12 +778,16 @@
         <!-- Add task -->
         <div class="card-section">
             <div class="section-title">Create New Task</div>
-            <form action="/tasks" method="POST" class="add-form">
+
+            <div th:if="${titleError}" class="alert alert-error" th:text="${titleError}">Error</div>
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">Success</div>
+
+            <form th:action="@{/tasks}" method="POST" class="add-form">
                 <div class="input-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
-                    <input type="text" name="title" placeholder="What needs to be done?" required>
+                    <input type="text" name="title" placeholder="What needs to be done?" maxlength="200" required>
                 </div>
                 <button type="submit" class="btn-add">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -649,30 +798,59 @@
             </form>
         </div>
 
+        <!-- Search tasks -->
+        <div class="card-section">
+            <div class="section-title">Search Tasks</div>
+            <form th:action="@{/tasks}" method="GET" class="search-form">
+                <input type="hidden" name="page" value="0">
+                <div class="input-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text"
+                           name="q"
+                           placeholder="Type keyword to search..."
+                           th:value="${searchQuery}">
+                </div>
+                <button type="submit" class="btn-search">Search</button>
+                <a th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}"
+                   th:href="@{/tasks}"
+                   class="btn-clear">Clear</a>
+            </form>
+        </div>
+
         <!-- Task list -->
         <div class="card-section">
 
-            <div th:if="${#lists.isEmpty(tasks)}" class="empty-state">
+            <div th:if="${totalElements == 0}" class="empty-state">
                 <div class="empty-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                         <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                     </svg>
                 </div>
-                <h3>All clear!</h3>
-                <p>No tasks yet. Create your first one above to get started.</p>
+                <h3 th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}">No results found</h3>
+                <p th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}">
+                    No tasks match "<strong th:text="${searchQuery}">query</strong>".
+                    <a th:href="@{/tasks}">Clear search</a> to see all tasks.
+                </p>
+                <h3 th:unless="${searchQuery != null and !#strings.isEmpty(searchQuery)}">All clear!</h3>
+                <p th:unless="${searchQuery != null and !#strings.isEmpty(searchQuery)}">
+                    No tasks yet. Create your first one above to get started.
+                </p>
             </div>
 
-            <div th:unless="${#lists.isEmpty(tasks)}">
+            <div th:if="${totalElements > 0}">
                 <div class="task-list-header">
-                    <h2>Your Tasks</h2>
-                    <span class="badge-count" th:text="${#lists.size(tasks)} + ' items'">0 items</span>
+                    <h2 th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}">Search Results</h2>
+                    <h2 th:unless="${searchQuery != null and !#strings.isEmpty(searchQuery)}">Your Tasks</h2>
+                    <span class="badge-count" th:text="${totalElements} + ' items'">0 items</span>
                 </div>
 
                 <div class="task-list">
                     <div th:each="task : ${tasks}"
                          th:class="${task.completed} ? 'task-item completed' : 'task-item'">
 
-                        <a th:href="@{/tasks/{id}/toggle(id=${task.id})}" class="task-check" title="Mark complete">
+                        <a th:href="@{/tasks/{id}/toggle(id=${task.id}, q=${searchQuery}, page=${currentPage})}" class="task-check" title="Mark complete">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
@@ -685,14 +863,14 @@
                         </div>
 
                         <div class="task-actions">
-                            <a th:href="@{/tasks/{id}/toggle(id=${task.id})}"
+                            <a th:href="@{/tasks/{id}/toggle(id=${task.id}, q=${searchQuery}, page=${currentPage})}"
                                class="btn-icon toggle" title="Toggle status">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
                                     <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
                                 </svg>
                             </a>
-                            <a th:href="@{/tasks/{id}/delete(id=${task.id})}"
+                            <a th:href="@{/tasks/{id}/delete(id=${task.id}, q=${searchQuery}, page=${currentPage})}"
                                class="btn-icon delete" title="Delete task">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"/>
@@ -703,6 +881,25 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="pagination" th:if="${totalPages > 1}">
+                    <a th:href="@{/tasks(page=${currentPage - 1}, q=${searchQuery})}"
+                       th:class="${currentPage == 0} ? 'page-btn disabled' : 'page-btn'">&#8592; Prev</a>
+
+                    <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                       th:href="@{/tasks(page=${i}, q=${searchQuery})}"
+                       th:text="${i + 1}"
+                       th:class="${i == currentPage} ? 'page-btn active' : 'page-btn'">1</a>
+
+                    <a th:href="@{/tasks(page=${currentPage + 1}, q=${searchQuery})}"
+                       th:class="${currentPage + 1 >= totalPages} ? 'page-btn disabled' : 'page-btn'">Next &#8594;</a>
+                </div>
+
+                <p class="page-info" th:if="${totalPages > 1}">
+                    Page <span th:text="${currentPage + 1}">1</span> of
+                    <span th:text="${totalPages}">1</span>
+                    (<span th:text="${totalElements}">0</span> tasks)
+                </p>
             </div>
 
         </div>
