@@ -33,6 +33,26 @@
             --shadow-lg: 0 20px 60px rgba(15, 23, 42, 0.12);
         }
 
+        [data-theme="dark"] {
+            --primary: #818cf8;
+            --primary-hover: #6366f1;
+            --primary-light: #312e81;
+            --success: #34d399;
+            --success-light: #052e24;
+            --danger: #f87171;
+            --danger-light: #450a0a;
+            --surface: #111827;
+            --surface-2: #1f2937;
+            --border: #374151;
+            --border-hover: #4b5563;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+            --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.32);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.45);
+        }
+
         *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
@@ -49,6 +69,13 @@
             color: var(--text);
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+        }
+
+        [data-theme="dark"] body {
+            background-color: #020617;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(129, 140, 248, 0.18) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(52, 211, 153, 0.1) 0, transparent 50%);
         }
 
         /* ── Layout ── */
@@ -110,6 +137,50 @@
             border-radius: var(--radius-sm);
             box-shadow: var(--shadow-sm);
             min-width: 200px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .theme-toggle {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .moon-icon {
+            display: none;
+        }
+
+        [data-theme="dark"] .sun-icon {
+            display: none;
+        }
+
+        [data-theme="dark"] .moon-icon {
+            display: block;
         }
 
         .clock-date {
@@ -346,6 +417,26 @@
         }
 
         .search-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        .sort-select {
+            min-width: 150px;
+            padding: 0.75rem 2.3rem 0.75rem 0.9rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--surface-2);
+            cursor: pointer;
+        }
+
+        .sort-select:focus {
             outline: none;
             border-color: var(--primary);
             background: var(--surface);
@@ -713,6 +804,7 @@
             .btn-add { justify-content: center; }
 
             .search-form { flex-direction: column; align-items: stretch; }
+            .sort-select { width: 100%; }
             .btn-search { justify-content: center; }
             .btn-clear { text-align: center; padding: 0.5rem; }
 
@@ -738,10 +830,21 @@
                 <span>Productivity Dashboard</span>
             </div>
         </div>
-        <div class="topbar-clock">
+        <div class="topbar-actions">
+            <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="4"/>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+            <div class="topbar-clock">
             <div class="clock-date" id="liveDate">Loading…</div>
             <div class="clock-time" id="liveTime">--:--:--</div>
             <div class="clock-remaining" id="timeLeft">-- left today</div>
+            </div>
         </div>
     </div>
 
@@ -812,9 +915,16 @@
                            placeholder="Type keyword to search..."
                            th:value="${searchQuery}">
                 </div>
+                <select name="sort" class="sort-select" onchange="this.form.submit()" aria-label="Sort tasks">
+                    <option value="newest" th:selected="${selectedSort == 'newest'}">Newest first</option>
+                    <option value="oldest" th:selected="${selectedSort == 'oldest'}">Oldest first</option>
+                    <option value="titleAsc" th:selected="${selectedSort == 'titleAsc'}">Title A-Z</option>
+                    <option value="titleDesc" th:selected="${selectedSort == 'titleDesc'}">Title Z-A</option>
+                    <option value="status" th:selected="${selectedSort == 'status'}">Pending first</option>
+                </select>
                 <button type="submit" class="btn-search">Search</button>
                 <a th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}"
-                   th:href="@{/tasks}"
+                   th:href="@{/tasks(sort=${selectedSort})}"
                    class="btn-clear">Clear</a>
             </form>
         </div>
@@ -850,7 +960,7 @@
                     <div th:each="task : ${tasks}"
                          th:class="${task.completed} ? 'task-item completed' : 'task-item'">
 
-                        <a th:href="@{/tasks/{id}/toggle(id=${task.id}, q=${searchQuery}, page=${currentPage})}" class="task-check" title="Mark complete">
+                        <a th:href="@{/tasks/{id}/toggle(id=${task.id}, q=${searchQuery}, sort=${selectedSort}, page=${currentPage})}" class="task-check" title="Mark complete">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
@@ -863,14 +973,14 @@
                         </div>
 
                         <div class="task-actions">
-                            <a th:href="@{/tasks/{id}/toggle(id=${task.id}, q=${searchQuery}, page=${currentPage})}"
+                            <a th:href="@{/tasks/{id}/toggle(id=${task.id}, q=${searchQuery}, sort=${selectedSort}, page=${currentPage})}"
                                class="btn-icon toggle" title="Toggle status">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
                                     <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
                                 </svg>
                             </a>
-                            <a th:href="@{/tasks/{id}/delete(id=${task.id}, q=${searchQuery}, page=${currentPage})}"
+                            <a th:href="@{/tasks/{id}/delete(id=${task.id}, q=${searchQuery}, sort=${selectedSort}, page=${currentPage})}"
                                class="btn-icon delete" title="Delete task">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"/>
@@ -883,15 +993,15 @@
                 </div>
 
                 <div class="pagination" th:if="${totalPages > 1}">
-                    <a th:href="@{/tasks(page=${currentPage - 1}, q=${searchQuery})}"
+                    <a th:href="@{/tasks(page=${currentPage - 1}, q=${searchQuery}, sort=${selectedSort})}"
                        th:class="${currentPage == 0} ? 'page-btn disabled' : 'page-btn'">&#8592; Prev</a>
 
                     <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
-                       th:href="@{/tasks(page=${i}, q=${searchQuery})}"
+                       th:href="@{/tasks(page=${i}, q=${searchQuery}, sort=${selectedSort})}"
                        th:text="${i + 1}"
                        th:class="${i == currentPage} ? 'page-btn active' : 'page-btn'">1</a>
 
-                    <a th:href="@{/tasks(page=${currentPage + 1}, q=${searchQuery})}"
+                    <a th:href="@{/tasks(page=${currentPage + 1}, q=${searchQuery}, sort=${selectedSort})}"
                        th:class="${currentPage + 1 >= totalPages} ? 'page-btn disabled' : 'page-btn'">Next &#8594;</a>
                 </div>
 
@@ -910,6 +1020,18 @@
 </div>
 
 <script>
+    const savedTheme = localStorage.getItem('taskflow-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.dataset.theme = initialTheme;
+
+    document.getElementById('themeToggle').addEventListener('click', function () {
+        const currentTheme = document.documentElement.dataset.theme;
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = nextTheme;
+        localStorage.setItem('taskflow-theme', nextTheme);
+    });
+
     function updateClock() {
         const now = new Date();
 

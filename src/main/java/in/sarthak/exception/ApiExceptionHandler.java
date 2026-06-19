@@ -9,10 +9,12 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.RestController;
 
-import in.sarthak.controller.TaskApiController;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 
-@RestControllerAdvice(assignableTypes = TaskApiController.class)
+@RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler {
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
@@ -20,6 +22,15 @@ public class ApiExceptionHandler {
 		Map<String, String> errors = new HashMap<>();
 		for (FieldError error : ex.getBindingResult().getFieldErrors()) {
 			errors.put(error.getField(), error.getDefaultMessage());
+		}
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+	}
+
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
+		Map<String, String> errors = new HashMap<>();
+		for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+			errors.put(violation.getPropertyPath().toString(), violation.getMessage());
 		}
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
 	}

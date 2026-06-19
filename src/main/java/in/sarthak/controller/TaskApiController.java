@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 import in.sarthak.dto.TaskRequest;
 import in.sarthak.models.Task;
@@ -22,9 +23,11 @@ import in.sarthak.services.TaskServices;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Validated
 @Tag(name = "Tasks", description = "Manage todo tasks")
 public class TaskApiController {
 
@@ -44,7 +47,7 @@ public class TaskApiController {
 
 	@GetMapping("/{id}")
 	@Operation(summary = "Get a task by ID")
-	public Task getTaskById(@PathVariable Long id) {
+	public Task getTaskById(@PathVariable @Positive(message = "Task id must be positive") Long id) {
 		return taskServices.getTaskById(id);
 	}
 
@@ -57,13 +60,13 @@ public class TaskApiController {
 
 	@PatchMapping("/{id}/toggle")
 	@Operation(summary = "Toggle task completion status")
-	public Task toggleTask(@PathVariable Long id) {
+	public Task toggleTask(@PathVariable @Positive(message = "Task id must be positive") Long id) {
 		return taskServices.toggleTasks(id);
 	}
 
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Delete a task")
-	public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+	public ResponseEntity<Void> deleteTask(@PathVariable @Positive(message = "Task id must be positive") Long id) {
 		taskServices.deleteTasks(id);
 		return ResponseEntity.noContent().build();
 	}
